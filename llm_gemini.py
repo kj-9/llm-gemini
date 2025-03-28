@@ -153,6 +153,7 @@ class _SharedGemini:
         "video/wmv",
         "video/3gpp",
         "video/quicktime",
+        "video/*",
     )
 
     class Options(llm.Options):
@@ -220,14 +221,25 @@ class _SharedGemini:
                 parts = []
                 for attachment in response.attachments:
                     mime_type = resolve_type(attachment)
-                    parts.append(
-                        {
-                            "inlineData": {
-                                "data": attachment.base64_content(),
-                                "mimeType": mime_type,
+
+                    if mime_type == "video/*":
+                        parts.append(
+                            {
+                                "fileData": {
+                                    "fileUri": attachment.url,
+                                    "mimeType": "video/*",
+                                }
                             }
-                        }
-                    )
+                        )
+                    else:
+                        parts.append(
+                            {
+                                "inlineData": {
+                                    "data": attachment.base64_content(),
+                                    "mimeType": mime_type,
+                                }
+                            }
+                        )
                 if response.prompt.prompt:
                     parts.append({"text": response.prompt.prompt})
                 messages.append({"role": "user", "parts": parts})
@@ -240,14 +252,24 @@ class _SharedGemini:
             parts.append({"text": prompt.prompt})
         for attachment in prompt.attachments:
             mime_type = resolve_type(attachment)
-            parts.append(
-                {
-                    "inlineData": {
-                        "data": attachment.base64_content(),
-                        "mimeType": mime_type,
+            if mime_type == "video/*":
+                parts.append(
+                    {
+                        "fileData": {
+                            "fileUri": attachment.url,
+                            "mimeType": "video/*",
+                        }
                     }
-                }
-            )
+                )
+            else:
+                parts.append(
+                    {
+                        "inlineData": {
+                            "data": attachment.base64_content(),
+                            "mimeType": mime_type,
+                        }
+                    }
+                )
 
         messages.append({"role": "user", "parts": parts})
         return messages
